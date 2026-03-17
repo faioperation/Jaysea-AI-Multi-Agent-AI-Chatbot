@@ -1,6 +1,6 @@
 # Import FastAPI framework
 # FastAPI is used to create web APIs so other systems or users can send requests to our AI service.
-from fastapi import FastAPI, Query
+from fastapi import FastAPI
 
 # Import datetime to add timestamps to responses
 # This helps track when the AI response was generated.
@@ -10,9 +10,22 @@ from datetime import datetime
 # This ensures each chat session can be tracked separately.
 import uuid
 
+# Import Pydantic for request validation (JSON body)
+from pydantic import BaseModel
+from typing import Optional
+
 # Import the AI orchestrator
 # The orchestrator controls the full AI workflow and coordinates all AI components.
 from app.orchestrator.agent_runner import run_agent
+
+
+# --------------------------------------------------
+# Request Model (Production Standard)
+# --------------------------------------------------
+# This defines the expected JSON structure for the /chat endpoint.
+class ChatRequest(BaseModel):
+    user_query: str
+    conversation_id: Optional[str] = None
 
 
 # Create the FastAPI application
@@ -23,18 +36,14 @@ app = FastAPI()
 # --------------------------------------------------
 # Root Endpoint
 # --------------------------------------------------
-# This endpoint is used to check if the API service is running.
-# When someone visits the root URL, this message confirms the system is active.
 @app.get("/")
 def root():
     return {"message": "AI Agent Service Running"}
 
 
 # --------------------------------------------------
-# AI Chat Endpoint
+# AI Chat Endpoint (Production Version)
 # --------------------------------------------------
-# This endpoint receives a user message and sends it to the AI agent.
-# The AI agent processes the message and returns a generated response.
 @app.post(
     "/chat",
     summary="AI Chat Endpoint",
@@ -50,51 +59,34 @@ Full AI Pipeline:
 6. Return generated response
 """
 )
-def chat(
+def chat(request: ChatRequest):
 
-    # user_query is the message from the user
-    # It is required and represents what the user wants to ask the AI.
-    user_query: str = Query(
-        ...,
-        description="The message or question that the user wants to ask the AI agent.",
-        example="Explain what a contract is"
-    ),
-
-    # conversation_id is used to identify a chat session
-    # If it is not provided, the system will create a new conversation.
-    conversation_id: str = Query(
-        None,
-        description="Unique conversation session id. If not provided, a new conversation will be created."
-    )
-):
+    # --------------------------------------------------
+    # Extract Request Data
+    # --------------------------------------------------
+    # Get user query and conversation ID from JSON body
+    user_query = request.user_query
+    conversation_id = request.conversation_id
 
     # --------------------------------------------------
     # Generate Conversation ID
     # --------------------------------------------------
     # If no conversation ID is provided, create a new one.
-    # This helps track each conversation separately.
     if not conversation_id:
         conversation_id = f"conv_{uuid.uuid4().hex[:10]}"
 
     # --------------------------------------------------
     # Run the AI Orchestrator
     # --------------------------------------------------
-    # The orchestrator manages the full AI pipeline.
-    # It collects context, builds the prompt, sends it to the AI model,
-    # and returns the generated response.
     result = run_agent(user_query)
 
-    # Extract the AI response content
+    # Extract AI response and memory info
     ai_response = result["content"]
-
-    # Extract memory information used during the response generation
     memory_info = result["memory"]
 
     # --------------------------------------------------
-    # Token Usage (Placeholder)
+    # Token Usage (Placeholder for now)
     # --------------------------------------------------
-    # These values will track token usage for the AI model.
-    # This helps measure cost and performance in production systems.
     prompt_tokens = 0
     completion_tokens = 0
     total_tokens = 0
@@ -102,9 +94,6 @@ def chat(
     # --------------------------------------------------
     # Return API Response
     # --------------------------------------------------
-    # The API returns a structured JSON response containing
-    # the conversation ID, user message, AI response, memory data,
-    # token usage, and timestamp.
     return {
         "success": True,
         "message": "AI response generated successfully",
