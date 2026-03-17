@@ -28,12 +28,25 @@ def get_instance_messages(user_id: str) -> List[Dict]:
         # messages in a specific format: role + content
         normalized_messages = []
 
-        for msg in messages:
+        all_raw_messages = []
+        for instance in messages:
+            if isinstance(instance, dict):
+                all_raw_messages.extend(instance.get("messages", []))
 
+        # Sort messages chronologically
+        all_raw_messages.sort(key=lambda x: x.get("createdAt", ""))
+
+        for msg in all_raw_messages:
             # Each message is converted into a clean structure
+            role = str(msg.get("role", "user")).lower()
+            if role == "assistant":
+                role = "assistant"
+            elif role == "user":
+                role = "user"
+
             normalized_messages.append({
-                "role": msg.get("role", "user"),   # default role = user
-                "content": msg.get("content", "")  # default content = empty
+                "role": role,
+                "content": msg.get("content", "")
             })
 
         # Return cleaned conversation history
