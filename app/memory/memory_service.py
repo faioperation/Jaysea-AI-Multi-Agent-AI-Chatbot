@@ -1,31 +1,63 @@
-# This file is responsible for retrieving memory data
-# Now it connects to the real database APIs
-from app.services.database_client import get_user_messages 
+# This file is responsible for handling memory-related data.
+# It acts as a middle layer between the AI system and the database APIs.
+# The AI system does NOT directly talk to the database.
+# Instead, it uses this file to get clean and structured data.
+
+
 from typing import List, Dict
-import requests
 
-# Database service base URL
-BASE_URL = "http://172.252.13.97:8004"
+# Import function that fetches messages from the database service
+# This function sends a request to the database API and returns raw data.
+from app.services.database_client import get_user_messages
 
 
-# Get conversation history for the current instance
+# -------------------------------------------------
+# Function: get_instance_messages
+# -------------------------------------------------
+# This function retrieves conversation history (short-term memory).
+# It loads previous messages of a user and formats them properly
+# so the AI model can understand them.
 def get_instance_messages(user_id: str) -> List[Dict]:
 
-    url = f"{BASE_URL}/api/admin/user-instances/for-ai/{user_id}"
+    try:
+        # Step 1: Get raw messages from the database
+        messages = get_user_messages(user_id)
 
-    response = requests.get(url)
+        # Step 2: Normalize the data format
+        # This is very important because the AI model expects
+        # messages in a specific format: role + content
+        normalized_messages = []
 
-    data = response.json()
+        for msg in messages:
 
-    # Return only the message list
-    return data.get("data", [])
+            # Each message is converted into a clean structure
+            normalized_messages.append({
+                "role": msg.get("role", "user"),   # default role = user
+                "content": msg.get("content", "")  # default content = empty
+            })
+
+        # Return cleaned conversation history
+        return normalized_messages
+
+    except Exception as e:
+        # If something goes wrong (API error, network issue, etc.),
+        # we log the error and return an empty list.
+        print(f"[Memory Service Error] get_instance_messages: {e}")
+        return []
 
 
-# Get past experience logs (currently not provided by database yet)
-# Keep mock for now until the API is ready
+# -------------------------------------------------
+# Function: search_experience
+# -------------------------------------------------
+# This function retrieves long-term memory (past experiences).
+# Right now, it is using sample (mock) data.
+# Later, it will connect to a real database or vector search system.
 def search_experience(query: str) -> List[str]:
 
-    # Temporary fallback data
+    # TODO: Replace this with real database or vector search API
+    # Example: db_search_experience(query)
+
+    # Return example past experiences
     return [
         "User previously asked about contract review",
         "Agent generated NDA summary"
