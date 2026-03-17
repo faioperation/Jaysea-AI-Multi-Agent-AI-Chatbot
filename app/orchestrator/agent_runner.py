@@ -5,8 +5,8 @@ from app.core.logger import logger
 from app.llm.openai_adapter import generate_response
 
 # DB integrations
-from app.services.experience_api import get_experience
-from app.utils.conversation_formatter import format_conversation
+from app.memory.memory_service import get_instance_messages
+from app.services.experience_api import search_experience
 
 
 def run_agent(user_query: str, user_id: str = "demo-user") -> dict:
@@ -24,31 +24,15 @@ def run_agent(user_query: str, user_id: str = "demo-user") -> dict:
         behaviour = "Be clear, concise, and professional."
 
         # -----------------------------
-        # 2. Short-term Memory (FROM DB - EXPERIENCE API)
-        # -----------------------------
-        raw_conversation = []
-
-        try:
-            raw_conversation = get_experience(user_id)
-
-            if not isinstance(raw_conversation, list):
-                logger.warning("Invalid experience format from DB")
-                raw_conversation = []
-
-        except Exception as e:
-            logger.error(f"Experience fetch failed: {str(e)}")
-            raw_conversation = []
-
-        # -----------------------------
-        # Format conversation for LLM
+        # 2. Short-term Memory (conversation)
         # -----------------------------
         try:
-            conversation = format_conversation(raw_conversation)
+            conversation = get_instance_messages(user_id)
         except Exception as e:
-            logger.error(f"Conversation formatting failed: {str(e)}")
+            logger.error(f"Conversation fetch failed: {str(e)}")
             conversation = []
 
-        # Limit memory (VERY IMPORTANT for token control)
+        # Limit memory (IMPORTANT)
         conversation = conversation[-5:]
 
         short_term_memory_used = bool(conversation)
@@ -56,11 +40,16 @@ def run_agent(user_query: str, user_id: str = "demo-user") -> dict:
         logger.info(f"Loaded {len(conversation)} conversation messages")
 
         # -----------------------------
-        # 3. Long-term Memory (placeholder)
+        # 3. Long-term Memory (experience search)
         # -----------------------------
-        # TODO: replace with semantic search API later
-        experience = []
-        long_term_memory_used = False
+        try:
+            experience_data = search_experience(user_query)
+            experience = [item.get("content", "") for item in experience_data]
+        except Exception as e:
+            logger.error(f"Experience search failed: {str(e)}")
+            experience = []
+
+        long_term_memory_used = bool(experience)
 
         # -----------------------------
         # 4. Build Prompt
