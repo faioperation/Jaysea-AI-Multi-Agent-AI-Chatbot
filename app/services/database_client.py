@@ -15,7 +15,7 @@ from app.core.logger import logger
 
 # Base URL of the database service
 # This is the address where the database API is running.
-BASE_URL = "http://172.252.13.97:8004"
+BASE_URL = "https://test21.fireai.agency"
 
 # Timeout for API requests (in seconds)
 # If the database does not respond within 5 seconds, the request will fail.

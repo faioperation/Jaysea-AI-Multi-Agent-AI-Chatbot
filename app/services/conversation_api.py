@@ -3,7 +3,7 @@
 import requests
 from app.core.logger import logger
 
-BASE_URL = "http://172.252.13.97:8004/api"
+BASE_URL = "https://test21.fireai.agency/api"
 
 
 def get_conversation_history(user_id: str):
