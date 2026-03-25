@@ -154,13 +154,18 @@ Do NOT repeat it unnecessarily.
         # -----------------------------
         reply = ""
 
+        llm_failed = False
+
         if isinstance(llm_response, dict):
             reply = (llm_response.get("content") or "").strip()
-        elif isinstance(llm_response, str):
-            reply = llm_response.strip()
+            llm_failed = llm_response.get("error", False)
 
-        if not reply:
-            reply = "I don't know"
+        # 🔥 smarter fallback
+        if llm_failed:
+            reply = "Sorry, I'm having trouble responding right now. Please try again."
+
+        elif not reply:
+            reply = "I'm not sure how to respond to that."
 
         # -----------------------------
         # Final Response
