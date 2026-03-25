@@ -34,6 +34,8 @@ def get_user_messages(user_id: str) -> List[Dict[str, Any]]:
         response = requests.get(url, timeout=TIMEOUT)
         response.raise_for_status()
 
+        data = response.json().get("data",[])
+
         json_resp = response.json()
         logger.info(f"RAW DB RESPONSE: {json_resp}") 
 
@@ -58,7 +60,7 @@ def get_user_messages(user_id: str) -> List[Dict[str, Any]]:
 
     except requests.exceptions.RequestException as e:
         logger.error(f"[DB ERROR] get_user_messages failed: {e}")
-        return []
+        raise
 
     except Exception as e:
         logger.error(f"[DB ERROR] Unexpected error: {e}", exc_info=True)

@@ -1,72 +1,56 @@
 from typing import List, Dict
 from app.core.logger import logger
-
-# 🔥 USE EXPERIENCE API (temporary fix)
-from app.services.experience_api import search_experience
+from app.services.database_client import get_user_messages
 
 
-# -------------------------------------------------
-# Function: get_instance_messages
-# -------------------------------------------------
-def get_instance_messages(user_id: str) -> List[Dict]:
-    """
-    Fetch conversation history and normalize for LLM
-    """
-
+def get_instance_messages(user_id: str, limit: int = 5) -> List[Dict]:
     try:
-        # -----------------------------
-        # 1. Fetch from EXPERIENCE API
-        # -----------------------------
-        messages = search_experience(user_id, query="")
+        logger.info(f"[MEMORY] Fetching messages for user_id={user_id}")
 
-        logger.info(f"[MEMORY] Raw experience count: {len(messages)}")
+        messages = get_user_messages(user_id)
 
         if not messages:
+            logger.warning("[MEMORY] No messages found")
             return []
 
-        # -----------------------------
-        # 2. Normalize messages
-        # -----------------------------
-        normalized_messages = []
+        logger.debug(f"[MEMORY RAW SAMPLE] {messages[:2]}")
 
-        for instance in messages:
+        normalized = []
+
+        for i, instance in enumerate(messages):
             if not isinstance(instance, dict):
+                logger.debug(f"[MEMORY] Skipped non-dict at index {i}")
                 continue
 
-            user_msg = instance.get("userQuery")
-            ai_msg = instance.get("aiResponse")
+            user_msg = (
+                instance.get("userQuery")
+                or instance.get("user_query")
+                or instance.get("message")
+            )
 
-            # User message
+            ai_msg = (
+                instance.get("aiResponse")
+                or instance.get("ai_response")
+            )
+
             if user_msg:
-                normalized_messages.append({
+                normalized.append({
                     "role": "user",
                     "content": str(user_msg).strip()
                 })
 
-            # Assistant message
             if ai_msg:
-                normalized_messages.append({
+                normalized.append({
                     "role": "assistant",
                     "content": str(ai_msg).strip()
                 })
 
-        logger.info(f"[MEMORY] Normalized messages: {len(normalized_messages)}")
+        logger.info(
+            f"[MEMORY] Normalized={len(normalized)} | Returned={min(len(normalized), limit)}"
+        )
 
-        return normalized_messages
+        return normalized[-limit:]
 
     except Exception as e:
-        logger.error(f"[Memory Service Error] get_instance_messages: {e}")
+        logger.error(f"[MEMORY ERROR] {e}", exc_info=True)
         return []
-
-
-# -------------------------------------------------
-# Function: search_experience (KEEP for fallback)
-# -------------------------------------------------
-def search_experience_local(query: str) -> List[str]:
-    """
-    Local fallback (not used now)
-    """
-    return [
-        "User previously asked about contract review",
-        "Agent generated NDA summary"
-    ]

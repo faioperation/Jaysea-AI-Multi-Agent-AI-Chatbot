@@ -1,59 +1,80 @@
 import requests
+from typing import List, Dict, Any
 from app.core.logger import logger
 
 BASE_URL = "https://test21.fireai.agency"
+TIMEOUT = 5
 
 
-# -------------------------------------------------
-# SEARCH EXPERIENCE (Long-term memory)
-# -------------------------------------------------
-def search_experience(user_id: str, query: str):
-    """
-    Fetch experience from API and return clean list
-    """
+def search_experience(
+    user_id: str,
+    query: str,
+    limit: int = 5
+) -> List[Dict[str, Any]]:
 
     url = f"{BASE_URL}/api/experience/user/for-ai/{user_id}"
 
     try:
-        logger.info(f"[EXPERIENCE API] Fetching for user_id={user_id}")
+        logger.info(f"[EXPERIENCE] Fetching user_id={user_id}")
 
-        response = requests.get(url, timeout=5)
+        response = requests.get(url, timeout=TIMEOUT)
         response.raise_for_status()
 
         json_resp = response.json()
 
-        # 🔥 FIX: correct extraction
         data_block = json_resp.get("data", {})
         experience_list = data_block.get("data", [])
 
-        logger.info(f"[EXPERIENCE API] Retrieved {len(experience_list)} records")
+        if not isinstance(experience_list, list):
+            logger.warning("[EXPERIENCE] Invalid format")
+            return []
 
-        return experience_list
+        logger.info(f"[EXPERIENCE] Raw count={len(experience_list)}")
+
+        # FILTER
+        if query:
+            query_lower = query.lower()
+
+            filtered = [
+                item for item in experience_list
+                if query_lower in str(item.get("content", "")).lower()
+            ]
+        else:
+            filtered = experience_list
+
+        logger.info(f"[EXPERIENCE] Filtered count={len(filtered)}")
+
+        return filtered[:limit]
 
     except Exception as e:
-        logger.error(f"[EXPERIENCE API ERROR] {str(e)}", exc_info=True)
+        logger.error(f"[EXPERIENCE ERROR] {e}", exc_info=True)
         return []
 
-
 # -------------------------------------------------
-# SAVE EXPERIENCE (Long-term memory write)
+# SAVE EXPERIENCE (Improved)
 # -------------------------------------------------
-def save_experience(user_id: str, role: str, content: str):
+def save_experience(user_id: str, role: str, content: str) -> bool:
     try:
         payload = {
-            "actor": role.lower(),        # user / agent
+            "actor": role.lower(),
             "event_type": "message",
             "content": content,
             "user_id": user_id
         }
 
-        res = requests.post(
+        response = requests.post(
             f"{BASE_URL}/experience",
             json=payload,
             timeout=3
         )
 
-        logger.info(f"Experience saved: {res.status_code}")
+        if response.status_code not in (200, 201):
+            logger.error(f"[EXPERIENCE SAVE] Failed: {response.status_code}")
+            return False
+
+        logger.info("[EXPERIENCE SAVE] Success")
+        return True
 
     except Exception as e:
-        logger.error(f"Experience save failed: {str(e)}")
+        logger.error(f"[EXPERIENCE SAVE ERROR] {e}", exc_info=True)
+        return False

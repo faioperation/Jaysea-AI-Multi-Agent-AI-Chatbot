@@ -6,98 +6,77 @@ def build_prompt(
     behaviour: str,
     experience: List[str],
     conversation: List[Dict],
-    user_query: str
+    user_query: str,
+    max_experience: int = 5,
+    max_conversation: int = 5
 ) -> str:
-    
-    # This list will store different parts of the prompt.
-    
+    """
+    Build structured prompt for LLM
+    """
+
     sections = []
 
     # -----------------------------
-    # 1. Agent Identity
+    # 1. Identity
     # -----------------------------
-    # Here we tell the AI who it is.
-    # Example: "You are a helpful customer support assistant"
     sections.append("### AGENT IDENTITY")
     sections.append(identity.strip())
 
     # -----------------------------
-    # 2. Behaviour Rules
+    # 2. Behaviour
     # -----------------------------
-    # Here we define how the AI should behave.
-    # Example: polite, short answers, professional tone.
     sections.append("\n### BEHAVIOUR")
     sections.append(behaviour.strip())
 
     # -----------------------------
-    # 3. Past Experience
+    # 3. Experience (LIMITED)
     # -----------------------------
-    # Sometimes the AI can learn from previous experiences.
-    # If there are any stored experiences, we include them here.
-    # This helps the AI make better decisions.
-
     sections.append("\n### EXPERIENCE MEMORY")
+
     if experience:
-        
-
-        # Each experience is added as a bullet point.
-        for exp in experience:
+        for exp in experience[:max_experience]:
             if exp:
-                sections.append(f"- {exp}")
-            else:
-                sections.append("No relevant experience found.")
+                sections.append(f"- {str(exp).strip()}")
+    else:
+        sections.append("No relevant experience.")
 
     # -----------------------------
-    # 4. Recent Conversation
+    # 4. Conversation (LIMITED)
+    # -----------------------------
     sections.append("\n### RECENT CONVERSATION")
-    # -----------------------------
-    # To help the AI understand context,
-    # we include recent messages from the conversation.
-    # Each message has two parts:
-    # role (user or assistant)
-    # content (what was said)
+
     if conversation:
-        
-
-        for msg in conversation:
+        for msg in conversation[-max_conversation:]:
             role = (msg.get("role") or "user").upper()
-            content = msg.get("content") or ""
+            content = (msg.get("content") or "").strip()
 
-            # Example format:
-            # USER: Hello
-            # ASSISTANT: Hi, how can I help?
-            sections.append(f"{role}: {content}")
+            sections.append(f"[{role}] {content}")
     else:
         sections.append("No recent conversation.")
 
     # -----------------------------
-    # 5. User Question
+    # 5. User Question (SANITIZED)
     # -----------------------------
-    # This is the new question the user just asked.
-    # The AI must answer this question.
     sections.append("\n### USER QUESTION")
-    sections.append(user_query.strip())
 
+    safe_query = user_query.strip().replace("\n", " ")
+    sections.append(safe_query)
 
-     # -----------------------------
-    # 6. Instruction (VERY IMPORTANT 🔥)
+    # -----------------------------
+    # 6. Strong Instruction
     # -----------------------------
     sections.append("\n### INSTRUCTION")
-    sections.append("""
-    Use the conversation and past experience to answer.
-    Do not make up facts.
-    If unsure, say you don't know.
-    """)
+    sections.append(
+        "Answer the USER QUESTION using only the provided context.\n"
+        "- Use conversation and experience if relevant\n"
+        "- Do NOT invent information\n"
+        "- If information is missing, say 'I don't know'\n"
+        "- Keep answer short and direct\n"
+    )
 
     # -----------------------------
-    # 6. Response Section
+    # 7. Response
     # -----------------------------
-    # This tells the AI where it should write the answer.
     sections.append("\n### RESPONSE")
 
-    # -----------------------------
-    # Final Step
-    # -----------------------------
-    # Join all sections into one single text prompt.
-    # Each part will be separated by a new line.
     return "\n".join(sections)
