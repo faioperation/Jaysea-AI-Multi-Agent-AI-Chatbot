@@ -128,6 +128,8 @@ Do NOT repeat it unnecessarily.
         #  FINAL FLAG
         long_term_memory_used = bool(experience)
 
+        # Reverse experience so that newest is at the bottom (LLM prefers later text)
+        experience.reverse()
 
         # -----------------------------
         # 5. Build Prompt

@@ -29,6 +29,9 @@ def search_experience(
             logger.warning("[EXPERIENCE] Invalid format")
             return []
 
+        # 🔥 Sort by newest first to ensure we prioritize latest memories when filtering
+        experience_list.sort(key=lambda x: str(x.get("createdAt", "")), reverse=True)
+
         logger.info(f"[EXPERIENCE] Raw count={len(experience_list)}")
 
         # FILTER (Modified to avoid strict exact substring match)
