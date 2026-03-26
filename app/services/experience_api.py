@@ -9,10 +9,10 @@ TIMEOUT = 5
 def search_experience(
     user_id: str,
     query: str,
-    limit: int = 5
+    limit: int = 100
 ) -> List[Dict[str, Any]]:
 
-    url = f"{BASE_URL}/api/experience/user/for-ai/{user_id}"
+    url = f"{BASE_URL}/api/experience/user/for-ai/{user_id}?limit=300"
 
     try:
         logger.info(f"[EXPERIENCE] Fetching user_id={user_id}")
@@ -31,14 +31,18 @@ def search_experience(
 
         logger.info(f"[EXPERIENCE] Raw count={len(experience_list)}")
 
-        # FILTER
+        # FILTER (Modified to avoid strict exact substring match)
         if query:
-            query_lower = query.lower()
+            query_words = query.lower().split()
 
             filtered = [
                 item for item in experience_list
-                if query_lower in str(item.get("content", "")).lower()
+                if any(word in str(item.get("content", "")).lower() for word in query_words)
             ]
+            
+            # If no keyword matches, fallback to returning the top experiences anyway for context
+            if not filtered:
+                filtered = experience_list
         else:
             filtered = experience_list
 

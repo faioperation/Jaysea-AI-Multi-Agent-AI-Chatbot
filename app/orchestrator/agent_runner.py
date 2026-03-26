@@ -57,11 +57,12 @@ Do NOT repeat it unnecessarily.
         Rules:
         - Always use previous conversation context if available
         - Never guess unknown information
-        - If information is missing, say "I don't know"
+        - If information is missing for a specific question, say "I don't know"
+        - If the user is just greeting you (e.g. "hello", "hi"), respond politely (e.g. "Hello! How can I help you today?")
         - Do NOT assume user details
         - Respond naturally (not email style)
         - Do NOT write like an email
-        - Do NOT use greetings like "Hi" or "Best regards"
+        - Do NOT use formal sign-offs like "Best regards"
         - Keep answers short and direct
         """
 

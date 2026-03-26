@@ -7,8 +7,8 @@ def build_prompt(
     experience: List[str],
     conversation: List[Dict],
     user_query: str,
-    max_experience: int = 5,
-    max_conversation: int = 5
+    max_experience: int = 100,
+    max_conversation: int = 10
 ) -> str:
     """
     Build structured prompt for LLM
