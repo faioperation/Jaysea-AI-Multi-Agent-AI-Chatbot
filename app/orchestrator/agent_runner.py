@@ -7,7 +7,7 @@ import time
 
 # DB integrations
 from app.memory.memory_service import get_instance_messages
-from app.services.experience_api import search_experience
+from app.services.experience_api import search_experience, save_experience
 from app.services.database_client import get_user_profile   # ✅ NEW
 
 
@@ -167,6 +167,17 @@ Do NOT repeat it unnecessarily.
 
         elif not reply:
             reply = "I'm not sure how to respond to that."
+
+        # -----------------------------
+        # Save to Long-Term Memory
+        # -----------------------------
+        if not llm_failed and reply:
+            try:
+                save_experience(user_id, "user", user_query)
+                save_experience(user_id, "assistant", reply)
+                logger.info("[MEMORY] Saved turn to long-term experience")
+            except Exception as e:
+                logger.error(f"[MEMORY ERROR] Failed to save experience: {str(e)}")
 
         # -----------------------------
         # Final Response
