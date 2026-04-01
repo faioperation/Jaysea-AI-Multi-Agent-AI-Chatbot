@@ -146,3 +146,5 @@ def get_user_profile(user_id: str) -> Dict[str, Any]:
 #     print("\n--- Testing get_user_messages ---")
 #     messages = get_user_messages(test_user_id)
 #     print(f"Messages count: {len(messages)}")
+
+# #print(get_user_messages(user_id="be8ca5be-6773-4bbe-9d80-46db9bad1858"))

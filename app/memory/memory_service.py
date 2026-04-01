@@ -24,7 +24,7 @@ def get_instance_messages(user_id: str, limit: int = 5) -> List[Dict]:
 
             user_msg = (
                 instance.get("userQuery")
-                or instance.get("user_query")
+                or instance.get("user_query") 
                 or instance.get("message")
             )
 
