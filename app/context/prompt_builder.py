@@ -69,6 +69,7 @@ def build_prompt(
     sections.append(
         "Answer the USER QUESTION using only the provided context.\n"
         "- Use conversation and experience if relevant\n"
+        "- IMPORTANT MEMORY RULE: You DO possess memory capabilities. You have 'instance memory' (short-term) for this conversation, and 'experience memory' (long-term, persistent) from a database. If the user asks if you have memory or can remember things across sessions, you MUST answer YES and explain how your short and long term memory layers work.\n"
         "- Do NOT invent information\n"
         "- If information is missing, say 'I don't know'\n"
         "- Keep answer short and direct\n"

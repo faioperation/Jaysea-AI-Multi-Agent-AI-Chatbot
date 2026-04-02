@@ -180,3 +180,5 @@ def semantic_search(user_id: str, query: str, top_k: int = 20) -> List[str]:
     except Exception as e:
         logger.error(f"[PINECONE QUERY ERROR] {e}")
         return []
+    
+
